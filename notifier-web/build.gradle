@@ -1,0 +1,54 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath 'com.moowork.gradle:gradle-node-plugin:1.2.0'
+    }
+}
+apply plugin: 'base'
+apply plugin: 'com.moowork.node' // gradle-node-plugin
+
+npm_run_build {
+    inputs.files fileTree("public")
+    inputs.files fileTree("src")
+    inputs.file 'package.json'
+    inputs.file 'package-lock.json'
+    outputs.dir 'build'
+}
+
+task packageUI(type: Zip) {
+    dependsOn npm_run_build
+    baseName 'notifier-web'
+    extension 'jar'
+    destinationDir file("${projectDir}/teamplate-ui-package")
+    from('build') {
+        // optional path under which output will be visible in Java classpath, e.g. static resources path
+        into 'static'
+    }
+}
+
+assemble.dependsOn packageUI
+
+configurations {
+    npmResources
+}
+configurations.default.extendsFrom(configurations.npmResources)
+
+
+artifacts {
+    npmResources(packageUI.archivePath) {
+        builtBy packageUI
+        type "jar"
+    }
+}
+
+
+clean {
+    delete packageUI.archivePath
+}
+
+
